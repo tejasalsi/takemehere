@@ -2,4 +2,11 @@
     <string name="app_name">Take Me Here</string>
 
     <string name="DEBUG_API_KEY">AIzaSyB8ghuN0FaUlKWNVpFEarpn534fBZ3y-Ys</string>
+
+    <string name="search_hint">Search for Places</string>
+    <string name="provider_path">com.weboniselab.takemehere.util.SearchHistoryProvider</string>
+    <string name="enable_gps">Enable GPS?</string>
+    <string name="yes">YES</string>
+    <string name="no">NO</string>
+    <string name="location_service">Location Services</string>
 </resources>
