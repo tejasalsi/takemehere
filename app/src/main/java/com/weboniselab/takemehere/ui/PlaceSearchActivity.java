@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.location.LocationManager;
 import android.provider.SearchRecentSuggestions;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -15,11 +16,22 @@ import android.view.MenuInflater;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.places.Places;
 import com.weboniselab.takemehere.R;
+import com.weboniselab.takemehere.network.APIConnector;
+import com.weboniselab.takemehere.network.ApiInterface;
+import com.weboniselab.takemehere.network.SearchResultResponse;
 import com.weboniselab.takemehere.util.SearchHistoryProvider;
 
-public class PlaceSearchActivity extends AppCompatActivity {
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
+public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
+
+    private GoogleApiClient mGoogleApiClient;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,17 +64,43 @@ public class PlaceSearchActivity extends AppCompatActivity {
     }
 
     private void initUI() {
+
+        mGoogleApiClient = new GoogleApiClient
+                .Builder(this)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .enableAutoManage(this, this)
+                .build();
     }
 
     private void saveSearchQuery(Intent intent) {
         if(Intent.ACTION_SEARCH.equals(intent.getAction())) {
             String query = intent.getStringExtra(SearchManager.QUERY);
-            Toast.makeText(this, query, Toast.LENGTH_SHORT).show();
             SearchRecentSuggestions suggestions = new SearchRecentSuggestions(this,
                     SearchHistoryProvider.AUTHORITY, SearchHistoryProvider.MODE);
             suggestions.saveRecentQuery(query, null);
+
+            generateQueryResult(query);
         }
 
+    }
+
+    private void generateQueryResult(String query) {
+        Call<SearchResultResponse> call = APIConnector.getConnector().getSearchList(query,
+                getResources().getString(R.string.DEBUG_API_KEY));
+
+        call.enqueue(new Callback<SearchResultResponse>() {
+            @Override
+            public void onResponse(Call<SearchResultResponse> call, Response<SearchResultResponse> response) {
+                String resp = response.message();
+                Toast.makeText(PlaceSearchActivity.this, resp, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Call<SearchResultResponse> call, Throwable t) {
+
+            }
+        });
     }
 
     private void checkForLocationServices() {
@@ -98,5 +136,10 @@ public class PlaceSearchActivity extends AppCompatActivity {
             });
             alert.show();
         }
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
     }
 }
