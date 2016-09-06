@@ -5,6 +5,8 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.provider.SearchRecentSuggestions;
 import android.provider.Settings;
@@ -32,6 +34,7 @@ import retrofit2.Response;
 public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
 
     private GoogleApiClient mGoogleApiClient;
+    private Location mLocation;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,6 +74,9 @@ public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiC
                 .addApi(Places.PLACE_DETECTION_API)
                 .enableAutoManage(this, this)
                 .build();
+
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        mLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
     }
 
     private void saveSearchQuery(Intent intent) {
@@ -80,20 +86,23 @@ public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiC
                     SearchHistoryProvider.AUTHORITY, SearchHistoryProvider.MODE);
             suggestions.saveRecentQuery(query, null);
 
-            generateQueryResult(query);
+            generateQueryResult(query, mLocation);
         }
 
     }
 
-    private void generateQueryResult(String query) {
-        Call<SearchResultResponse> call = APIConnector.getConnector().getSearchList(query,
-                getResources().getString(R.string.DEBUG_API_KEY));
+    private void generateQueryResult(String query, Location location) {
+        String position = null;
+        if(location != null) {
+            position = location.getLatitude() + "," + location.getLongitude();
+        }
+        Call<SearchResultResponse> call = APIConnector.getConnector().getSearchList(query, position,
+                getResources().getString(R.string.places_web_service_key));
 
         call.enqueue(new Callback<SearchResultResponse>() {
             @Override
             public void onResponse(Call<SearchResultResponse> call, Response<SearchResultResponse> response) {
-                String resp = response.message();
-                Toast.makeText(PlaceSearchActivity.this, resp, Toast.LENGTH_SHORT).show();
+                response.body().
             }
 
             @Override

@@ -11,5 +11,6 @@ import retrofit2.http.Query;
 public interface ApiInterface {
 
     @GET("textsearch/json")
-    Call<SearchResultResponse> getSearchList(@Query("query") String searchText, @Query("key") String apiKey);
+    Call<SearchResultResponse> getSearchList(@Query("query") String searchText, @Query("location") String currentPosition,
+            @Query("key") String apiKey);
 }

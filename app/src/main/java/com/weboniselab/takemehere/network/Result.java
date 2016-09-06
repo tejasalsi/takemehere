@@ -44,6 +44,9 @@ public class Result {
     @SerializedName("vicinity")
     @Expose
     private String vicinity;
+    @SerializedName("formatted_address")
+    @Expose
+    private String formattedAddress;
 
     /**
      * 
@@ -261,4 +264,11 @@ public class Result {
         this.vicinity = vicinity;
     }
 
+    public String getFormattedAddress() {
+        return formattedAddress;
+    }
+
+    public void setFormattedAddress(String formattedAddress) {
+        this.formattedAddress = formattedAddress;
+    }
 }

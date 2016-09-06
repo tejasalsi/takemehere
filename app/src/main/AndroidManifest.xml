@@ -6,6 +6,8 @@
     <uses-permission-sdk-23 android:name="android.permission.INTERNET"/>
     <uses-permission-sdk-23 android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
+    <uses-permission-sdk-23 android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
 
     <application
         android:allowBackup="true"
