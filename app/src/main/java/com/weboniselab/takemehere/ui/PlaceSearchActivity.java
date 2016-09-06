@@ -6,13 +6,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.provider.SearchRecentSuggestions;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.widget.SearchView;
@@ -20,12 +22,14 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.places.Places;
 import com.weboniselab.takemehere.R;
+import com.weboniselab.takemehere.adapters.SearchAdapter;
 import com.weboniselab.takemehere.network.APIConnector;
-import com.weboniselab.takemehere.network.ApiInterface;
+import com.weboniselab.takemehere.network.Result;
 import com.weboniselab.takemehere.network.SearchResultResponse;
 import com.weboniselab.takemehere.util.SearchHistoryProvider;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -33,15 +37,18 @@ import retrofit2.Response;
 
 public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
 
-    private GoogleApiClient mGoogleApiClient;
     private Location mLocation;
+    private List<Result> mSearchResultList;
+    private RecyclerView mPlaceListView;
+    private SearchAdapter mSearchAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_place_search);
 
-        initUI();
         saveSearchQuery(getIntent());
+        initUI();
         checkForLocationServices();
     }
 
@@ -66,15 +73,13 @@ public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiC
         saveSearchQuery(intent);
     }
 
+    //initiate your first activity
     private void initUI() {
 
-        mGoogleApiClient = new GoogleApiClient
-                .Builder(this)
-                .addApi(Places.GEO_DATA_API)
-                .addApi(Places.PLACE_DETECTION_API)
-                .enableAutoManage(this, this)
-                .build();
-
+        mPlaceListView = (RecyclerView) findViewById(R.id.place_list);
+        mPlaceListView.setLayoutManager(new LinearLayoutManager(this));
+        mPlaceListView.hasFixedSize();
+        mPlaceListView.setItemAnimator(new DefaultItemAnimator());
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         mLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
     }
@@ -85,7 +90,6 @@ public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiC
             SearchRecentSuggestions suggestions = new SearchRecentSuggestions(this,
                     SearchHistoryProvider.AUTHORITY, SearchHistoryProvider.MODE);
             suggestions.saveRecentQuery(query, null);
-
             generateQueryResult(query, mLocation);
         }
 
@@ -102,12 +106,16 @@ public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiC
         call.enqueue(new Callback<SearchResultResponse>() {
             @Override
             public void onResponse(Call<SearchResultResponse> call, Response<SearchResultResponse> response) {
-                response.body().
+                mSearchResultList = response.body().getResults();
+                mSearchAdapter = SearchAdapter.getInstance(PlaceSearchActivity.this);
+                mSearchAdapter.setSearchList(mSearchResultList);
+                mPlaceListView.setAdapter(mSearchAdapter);
             }
 
             @Override
             public void onFailure(Call<SearchResultResponse> call, Throwable t) {
-
+                Toast.makeText(PlaceSearchActivity.this, getResources().getString(R.string.failed_response),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }

@@ -38,6 +38,8 @@
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
+
+        <activity android:name=".ui.ShowOnMapActivity"/>
         
         <provider
             android:authorities="@string/provider_path"
