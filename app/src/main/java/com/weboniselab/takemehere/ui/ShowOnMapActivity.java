@@ -1,11 +1,14 @@
 package com.weboniselab.takemehere.ui;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -48,10 +51,8 @@ public class ShowOnMapActivity extends AppCompatActivity implements OnMapReadyCa
         mGoogleMap = googleMap;
 
         mGoogleMap.addMarker(new MarkerOptions().position(getLocationDetails()).title(mPLaceName));
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(location.getLatitude(),
-                location.getLongitude())));
+
+        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(getLocationDetails()));
 
     }
 

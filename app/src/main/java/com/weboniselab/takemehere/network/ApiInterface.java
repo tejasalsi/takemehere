@@ -13,4 +13,8 @@ public interface ApiInterface {
     @GET("textsearch/json")
     Call<SearchResultResponse> getSearchList(@Query("query") String searchText, @Query("location") String currentPosition,
             @Query("key") String apiKey);
+
+    @GET("photo")
+    Call<Photo> getPhotoURL(@Query("photoreference") String reference, @Query("maxwidth") int width,
+                            @Query("key") String apiKey);
 }
