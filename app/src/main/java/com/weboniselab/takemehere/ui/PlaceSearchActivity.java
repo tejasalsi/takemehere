@@ -26,12 +26,14 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.places.Places;
 import com.weboniselab.takemehere.R;
 import com.weboniselab.takemehere.adapters.SearchAdapter;
 import com.weboniselab.takemehere.network.APIConnector;
 import com.weboniselab.takemehere.network.Result;
 import com.weboniselab.takemehere.network.SearchResultResponse;
 import com.weboniselab.takemehere.util.Constants;
+import com.weboniselab.takemehere.util.GPSTracker;
 import com.weboniselab.takemehere.util.SearchHistoryProvider;
 
 import java.util.List;
@@ -47,6 +49,7 @@ public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiC
     private RecyclerView mPlaceListView;
     private SearchAdapter mSearchAdapter;
     private String mQuery;
+    private GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +59,13 @@ public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiC
         saveSearchQuery(getIntent());
         initUI();
         checkForLocationServices();
+
+        mGoogleApiClient = new GoogleApiClient
+                .Builder(this)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .enableAutoManage(this, this)
+                .build();
     }
 
     @Override
@@ -86,17 +96,11 @@ public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiC
         mPlaceListView.setLayoutManager(new LinearLayoutManager(this));
         mPlaceListView.hasFixedSize();
         mPlaceListView.setItemAnimator(new DefaultItemAnimator());
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    Constants.FINE_LOCATION_REQUEST_CODE);
-        }
+        GPSTracker gpsTracker = new GPSTracker(this);
+        mLocation = gpsTracker.getLocation();
 
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        }
+
     }
 
 
@@ -126,7 +130,7 @@ public class PlaceSearchActivity extends AppCompatActivity implements GoogleApiC
             @Override
             public void onResponse(Call<SearchResultResponse> call, Response<SearchResultResponse> response) {
                 mSearchResultList = response.body().getResults();
-                mSearchAdapter = SearchAdapter.getInstance(PlaceSearchActivity.this);
+                mSearchAdapter = SearchAdapter.getInstance(PlaceSearchActivity.this, mGoogleApiClient);
                 mSearchAdapter.setSearchList(mSearchResultList);
                 mPlaceListView.setAdapter(mSearchAdapter);
             }

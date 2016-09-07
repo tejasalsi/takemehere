@@ -11,4 +11,5 @@
     <string name="location_service">Location Services</string>
     <string name="failed_response">Failed to fetch results</string>
     <string name="permission_error">Fine Location Permission Denied</string>
+    <string name="sdcard_error">SD Card Not Found</string>
 </resources>

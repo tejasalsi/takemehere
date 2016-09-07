@@ -2,6 +2,8 @@ package com.weboniselab.takemehere.adapters;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.os.Parcelable;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -10,13 +12,17 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.weboniselab.takemehere.R;
 import com.weboniselab.takemehere.network.APIConnector;
 import com.weboniselab.takemehere.network.Photo;
 import com.weboniselab.takemehere.network.Result;
 import com.weboniselab.takemehere.ui.ShowOnMapActivity;
 import com.weboniselab.takemehere.util.Constants;
+import com.weboniselab.takemehere.util.LoadBitmaps;
+import com.weboniselab.takemehere.util.LoadPhotosTask;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -26,18 +32,22 @@ import retrofit2.Response;
 /**
  * Created by tejas.alsi on 9/6/2016.
  */
-public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SearchViewHolder> {
+public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SearchViewHolder> implements LoadBitmaps {
 
     private List<Result> searchList;
     private static SearchAdapter searchAdapter = new SearchAdapter();
     private static Context mContext;
+    private static GoogleApiClient mGoogleAPIClient;
+    private List<Bitmap> mPlacePhotos;
+    private Intent mShowOnMapIntent;
 
     private SearchAdapter() {
         //nothing to do here.
     }
 
-    public static SearchAdapter getInstance(Context context) {
+    public static SearchAdapter getInstance(Context context, GoogleApiClient googleApiClient) {
         mContext = context;
+        mGoogleAPIClient = googleApiClient;
         return searchAdapter;
     }
 
@@ -62,14 +72,11 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SearchView
                 double lat = placeResult.getGeometry().getLocation().getLat();
                 double lang = placeResult.getGeometry().getLocation().getLng();
 
-                Intent showOnMapIntent = new Intent(mContext, ShowOnMapActivity.class);
-                showOnMapIntent.putExtra(Constants.LATITUDE, lat);
-                showOnMapIntent.putExtra(Constants.LONGITUDE, lang);
-                showOnMapIntent.putExtra(Constants.PLACE_NAME, placeResult.getName());
-                String photoURL = getPhotoURL(placeResult.getPhotos().get(0).getPhotoReference(), 300);
-                Toast.makeText(mContext, photoURL, Toast.LENGTH_SHORT).show();
-                //showOnMapIntent.putExtra(Constants.PHOTOS_URL, placeResult.getPhotos().get(position));
-                mContext.startActivity(showOnMapIntent);
+                mShowOnMapIntent = new Intent(mContext, ShowOnMapActivity.class);
+                mShowOnMapIntent.putExtra(Constants.LATITUDE, lat);
+                mShowOnMapIntent.putExtra(Constants.LONGITUDE, lang);
+                mShowOnMapIntent.putExtra(Constants.PLACE_NAME, placeResult.getName());
+                getPhotos(placeResult.getPlaceId());
 
             }
         });
@@ -91,22 +98,14 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SearchView
         }
     }
 
-    private String getPhotoURL(String photoReference, int photoSizeInPixel) {
-        Call<Photo> call = APIConnector.getConnector().getPhotoURL(photoReference, photoSizeInPixel,
-                mContext.getResources().getString(R.string.places_web_service_key));
+    private void getPhotos(String placeID) {
+        new LoadPhotosTask(100, 100, mGoogleAPIClient, this, mContext).execute(placeID);
+    }
 
-        call.enqueue(new Callback<Photo>() {
-            @Override
-            public void onResponse(Call<Photo> call, Response<Photo> response) {
-                String photoURL = response.message();
-            }
-
-            @Override
-            public void onFailure(Call<Photo> call, Throwable t) {
-
-            }
-        });
-        return null;
-
+    @Override
+    public void getBitmaps(List<Bitmap> bitmaps) {
+        mPlacePhotos = bitmaps;
+        mShowOnMapIntent.putParcelableArrayListExtra(Constants.PHOTOS, (ArrayList<? extends Parcelable>) mPlacePhotos);
+        mContext.startActivity(mShowOnMapIntent);
     }
 }
